@@ -7,15 +7,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
 body{margin:0;font-family:'Poppins',sans-serif;background:#0f0f0f;color:#fff;padding:20px;}
-h1,h2{color:#FFD700;}
-input,textarea,select{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:none;}
-button{background:linear-gradient(45deg,#FFD700,#FFA500);color:#0f0f0f;border:none;padding:10px 15px;border-radius:12px;cursor:pointer;margin:5px;transition:.3s;}
+h1,h2{color:#FFD700;margin-bottom:15px;}
+input,textarea,select{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:none;background:#222;color:#fff;}
+button{background:linear-gradient(45deg,#FFD700,#FFA500);color:#0f0f0f;border:none;padding:10px 15px;border-radius:12px;cursor:pointer;margin:5px;transition:.3s;font-weight:600;}
 button:hover{transform:scale(1.05);}
 .project-card{background:#1a1a1a;padding:15px;border-radius:12px;margin-bottom:15px;box-shadow:0 5px 15px rgba(0,0,0,0.5);}
-.project-card h3{color:#FFD700;margin:0;}
+.project-card h3{color:#FFD700;margin:0 0 5px 0;}
+.project-card p{color:#ccc;margin:5px 0;}
 .image-field{display:flex;margin-bottom:5px;}
-.image-field input{flex:1;margin-right:5px;}
+.image-field input{flex:1;margin-right:5px;background:#333;color:#fff;}
 .image-field button{flex:0;}
+hr{border-color:#FFD700;margin:30px 0;}
 </style>
 </head>
 <body>
@@ -40,18 +42,14 @@ button:hover{transform:scale(1.05);}
 
 <div id="imagesContainer">
   <label>Imagens</label>
-  <div class="image-field">
-    <input type="text" class="image-link" placeholder="Link Dropbox">
-    <button type="button" onclick="removeImageField(this)">-</button>
-  </div>
 </div>
-<button type="button" onclick="addImageField()">Adicionar Imagem</button>
+<button type="button" onclick="addImageField()">+ Adicionar Imagem</button>
 <br>
 <button type="submit" id="saveBtn">Salvar Projeto</button>
 </form>
 </section>
 
-<hr style="border-color:#FFD700;">
+<hr>
 
 <section id="projects-list">
 <h2>Projetos Cadastrados</h2>
@@ -86,7 +84,7 @@ const saveBtn = document.getElementById("saveBtn");
 
 let editingProjectId = null;
 
-// Adicionar novo campo de imagem
+// Adicionar campo de imagem
 function addImageField(value="") {
   const div = document.createElement("div");
   div.className = "image-field";
@@ -96,22 +94,20 @@ function addImageField(value="") {
 }
 
 // Remover campo de imagem
-function removeImageField(btn){
-  btn.parentElement.remove();
-}
+window.removeImageField = function(btn){ btn.parentElement.remove(); }
 
 // Converter link Dropbox para ?dl=1
 function formatDropboxLink(url){
   if(!url) return "";
   if(url.includes("dropbox.com") && !url.includes("?dl=1")){
     if(url.includes("?dl=0")) url = url.replace("?dl=0","?dl=1");
-    else url = url + "?dl=1";
+    else url += "?dl=1";
   }
   return url;
 }
 
 // Salvar projeto
-projectForm.addEventListener("submit", (e)=>{
+projectForm.addEventListener("submit",(e)=>{
   e.preventDefault();
   const title = titleInput.value.trim();
   const description = descriptionInput.value.trim();
@@ -133,34 +129,32 @@ projectForm.addEventListener("submit", (e)=>{
   }
 
   projectForm.reset();
-  imagesContainer.innerHTML = `<label>Imagens</label>
-    <div class="image-field">
-      <input type="text" class="image-link" placeholder="Link Dropbox">
-      <button type="button" onclick="removeImageField(this)">-</button>
-    </div>`;
+  imagesContainer.innerHTML = "";
+  addImageField();
 });
 
 // Listar projetos
-onValue(ref(db,"projects"), snapshot=>{
-  const data = snapshot.val() || {};
-  projectsContainer.innerHTML = "";
-  for(const id in data){
-    const project = data[id];
-    const card = document.createElement("div");
-    card.className = "project-card";
-    card.innerHTML = `
-      <h3>${project.title}</h3>
-      <p>${project.description}</p>
-      <p><b>Categoria:</b> ${project.category}</p>
-      <p><b>Imagens:</b> ${project.images.length}</p>
-      <button onclick="editProject('${id}')">Editar</button>
-      <button onclick="deleteProject('${id}')">Excluir</button>
-    `;
-    projectsContainer.appendChild(card);
-  }
-});
+function listProjects(){
+  onValue(ref(db,"projects"), snapshot=>{
+    const data = snapshot.val() || {};
+    projectsContainer.innerHTML = "";
+    for(const id in data){
+      const project = data[id];
+      const card = document.createElement("div");
+      card.className = "project-card";
+      card.innerHTML = `
+        <h3>${project.title}</h3>
+        <p>${project.description}</p>
+        <p><b>Categoria:</b> ${project.category}</p>
+        <p><b>Imagens:</b> ${project.images.length}</p>
+        <button onclick="editProject('${id}')">Editar</button>
+        <button onclick="deleteProject('${id}')">Excluir</button>
+      `;
+      projectsContainer.appendChild(card);
+    }
+  });
+}
 
-// Editar projeto
 window.editProject = function(id){
   const projectRef = ref(db,"projects/"+id);
   onValue(projectRef, snapshot=>{
@@ -169,7 +163,7 @@ window.editProject = function(id){
       titleInput.value = project.title;
       descriptionInput.value = project.description;
       categoryInput.value = project.category;
-      imagesContainer.innerHTML = `<label>Imagens</label>`; 
+      imagesContainer.innerHTML = "";
       project.images.forEach(url=>addImageField(url));
       editingProjectId = id;
       saveBtn.textContent = "Atualizar Projeto";
@@ -177,12 +171,15 @@ window.editProject = function(id){
   }, {once:true});
 }
 
-// Excluir projeto
 window.deleteProject = function(id){
   if(confirm("Tem certeza que deseja excluir este projeto?")){
     remove(ref(db,"projects/"+id));
   }
 }
+
+// Inicializa com um campo de imagem
+addImageField();
+listProjects();
 </script>
 </body>
 </html>
