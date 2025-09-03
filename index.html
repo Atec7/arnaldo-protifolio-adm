@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Portfólio</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+body{background:#0f0f0f;color:#fff;font-family:'Poppins',sans-serif;padding:20px;}
+h1,h2{color:#FFD700;}
+form{background:#1a1a1a;padding:20px;border-radius:15px;margin-bottom:30px;}
+input,textarea,select{width:100%;margin:5px 0;padding:10px;border-radius:10px;border:none;}
+button{background:linear-gradient(45deg,#FFD700,#FFA500);color:#0f0f0f;border:none;padding:10px 20px;border-radius:12px;cursor:pointer;font-weight:600;transition:0.3s;margin-top:10px;}
+button:hover{transform:scale(1.05);}
+ul{list-style:none;padding:0;}
+li{background:#1a1a1a;margin:10px 0;padding:10px;border-radius:10px;}
+li button{margin-left:10px;padding:5px 10px;}
+</style>
+</head>
+<body>
+
+<h1>Admin - Portfólio</h1>
+
+<form id="projectForm">
+  <input type="text" name="title" placeholder="Título" required>
+  <textarea name="description" placeholder="Descrição" required></textarea>
+  <select name="category" required>
+    <option value="web">Web</option>
+    <option value="data">Data & BI</option>
+    <option value="adm">Administrativo</option>
+  </select>
+  <input type="text" name="images" placeholder="Links diretos das imagens separados por vírgula" required>
+  <button type="submit">Salvar Projeto</button>
+</form>
+
+<h2>Projetos cadastrados</h2>
+<ul id="projectsList"></ul>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
+import { getDatabase, ref, push, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBp2g7BsZSlhES5jrLX9-bz7LGyGBWKcjI",
+  authDomain: "portifolio-arnaldo.firebaseapp.com",
+  databaseURL: "https://portifolio-arnaldo-default-rtdb.firebaseio.com/",
+  projectId: "portifolio-arnaldo",
+  storageBucket: "portifolio-arnaldo.firebasestorage.app",
+  messagingSenderId: "349669431020",
+  appId: "1:349669431020:web:b4644e22768fa9e4cdb7c9",
+  measurementId: "G-WCY33Z6FXV"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const form = document.getElementById("projectForm");
+const projectsList = document.getElementById("projectsList");
+let editId = null;
+
+form.addEventListener("submit", e=>{
+  e.preventDefault();
+  const title = form.title.value;
+  const description = form.description.value;
+  const category = form.category.value;
+  const images = form.images.value.split(",").map(i=>i.trim());
+
+  if(editId){
+    update(ref(db,'projects/'+editId),{title,description,category,images});
+    editId=null;
+  }else{
+    push(ref(db,'projects'),{title,description,category,images});
+  }
+  form.reset();
+});
+
+function loadAdminProjects(){
+  onValue(ref(db,'projects'), snapshot=>{
+    const data = snapshot.val();
+    projectsList.innerHTML="";
+    for(const id in data){
+      const p = data[id];
+      const li=document.createElement("li");
+      li.innerHTML=`<b>${p.title}</b> (${p.category}) 
+        <button onclick="editProject('${id}', ${JSON.stringify(p).replace(/'/g,"\\'")})">✏️</button>
+        <button onclick="deleteProject('${id}')">🗑️</button>`;
+      projectsList.appendChild(li);
+    }
+  });
+}
+
+window.editProject=(id,project)=>{
+  editId=id;
+  form.title.value=project.title;
+  form.description.value=project.description;
+  form.category.value=project.category;
+  form.images.value=project.images.join(", ");
+}
+
+window.deleteProject=id=>remove(ref(db,'projects/'+id));
+
+loadAdminProjects();
+</script>
+
+</body>
+</html>
