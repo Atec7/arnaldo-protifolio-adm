@@ -99,12 +99,11 @@ window.addImageField = function(value=""){
 // Remover campo de imagem
 window.removeImageField = function(btn){ btn.parentElement.remove(); }
 
-// Converter link Dropbox
+// Converter link Dropbox (substitui www por dl)
 function formatDropboxLink(url){
   if(!url) return "";
-  if(url.includes("dropbox.com") && !url.includes("?dl=1")){
-    if(url.includes("?dl=0")) url = url.replace("?dl=0","?dl=1");
-    else url += "?dl=1";
+  if(url.includes("dropbox.com")){
+    url = url.replace("www.dropbox.com", "dl.dropboxusercontent.com");
   }
   return url;
 }
